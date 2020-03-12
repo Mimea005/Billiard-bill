@@ -14,56 +14,58 @@ let renderList = [];
 
 //SECTION definitions
 class Vector2 {
-
     constructor(x, y) {
         this.x = x;
         this.y = y;
     }
 
-    static add(a, b) {
-        return new Vector2(a.x + b.x, a.y + b.y);
+    get magnitude () {return Math.sqrt(this.x**2 + this.y**2)};
+
+    get normalized () {return new Vector2(this.x/this.magnitude, this.y/this.magnitude)};
+
+    get reversed () {return new Vector2(-this.x, -this.y)};
+
+    get abs () {return new Vector2(Math.abs(this.x), Math.abs(this.y))};
+
+    get angle () {return (Math.atan2(this.x,this.y) * (180/Math.PI))};
+
+    
+    set add(vector) {return Vector2.add(this, vector)};
+    
+    
+    equals(vector) {
+        if(this.x == vector.x && this.y == vector.y) {return true}
+        else {return false}
+    }
+    
+    static get zero () {return new Vector2(0,0)};
+
+    static mult(vector, num) {
+        return new Vector2(vector.x * num, vector.y * num);
+    }
+    
+    static div(vector,b) {
+        return new Vector2(vector.x/num, vector.y/num);
     }
 
-    static sub(a,b) {
-        return new Vector2(a.x - b.x, a.y - b.y);
+    static add(vector1, vector2) {
+        return new Vector2(vector1.x + vector2.x, vector1.y + vector2.y);
     }
 
-    static mult(a, b) {
-        return new Vector2(a.x * b, a.y * b);
+    static sub(vector1, vector2) {
+        return new Vector2(vector1.x - vector2.x, vector1.y - vector2.y);
     }
 
-    static dot(a, b) {
-        return (a.x * b.x) + (a.y * b.y);
+    static dot(vector1, vector2) {
+        return (vector1.x * vector2.x) + (vector1.y * vector2.y);
     }
-
-    static div(a,b) {
-        return new Vector2(a.x/b, a.y/b);
-    }
-
-    get abs () {
-        return new Vector2(Math.abs(this.x), Math.abs(this.y))
-    }
-
-    get magnitude2 () {
-        return this.x**2 + this.y**2;
-    }
-
-    get angle () {
-        return (Math.atan2(this.x,this.y) * (180/Math.PI));
-    }
-
-    get sum () {
-        return this.x + this.y;
-    }
-
 }
 
 class Ball {
-    pos = new Vector2(0,0);
+    pos = Vector2.zero;
     color = "#000000";
-    velocity = new Vector2(0,0);
+    velocity = Vector2.zero;
     mass = 0;
-    kEnergy
 
     constructor(position, mass, color = "#000000") {
         this.pos = position;
@@ -74,33 +76,36 @@ class Ball {
     update(dt) {
         this.pos = new Vector2(this.pos.x + this.velocity.x * (dt/1000), this.pos.y + this.velocity.y * (dt/1000))
         this.velocity = Vector2.mult(this.velocity, gameConfig.friction);
-        this.kEnergy;
     }
 
     collide(other) {
         /*NOTE Step 1: Find unit normal and unit tangent vectors.
             the unit normal vector is a vector with a magnitude of 1
         */
-        let normal = Vector2.sub(other.pos, this.pos);
-        let uNormal = new Vector2(normal.x/normal.magnitude2, normal.y/normal.magnitude2)
-        let uTangent = new Vector2(-uNormal.y, uNormal.x);
+       //Step 1: Find unit normal and unit tangent vectors
+        let differance = Vector2.sub(other.pos, this.pos);
+        let normal = differance.normalized;
+        let tangent = new Vector2(-normal.y, normal.x);
 
-        let v1n = Vector2.dot(uNormal, this.velocity);
-        let v1t = Vector2.dot(uTangent, this.velocity);
+        //Step 2: TODO
+        let thisNormal = Vector2.dot(normal, this.velocity);
+        let thisTangent = Vector2.dot(tangent, this.velocity);
 
-        let v2n = Vector2.dot(uNormal, other.velocity);
-        let v2t = Vector2.dot(uTangent, other.velocity);
+        let otherNormal = Vector2.dot(normal, other.velocity);
+        let otherTangent = Vector2.dot(tangent, other.velocity);
 
-        v1n = (v1n * (this.mass - other.mass) + (2*other.mass*v2n)) / (this.mass + other.mass);
-        v2n = (v2n * (other.mass - this.mass) + (2*this.mass*v1n)) / (this.mass + other.mass);
+        //Step 3: TODO 
+        thisNormal = (thisNormal * (this.mass - other.mass) + (2 * other.mass * otherNormal)) / (this.mass + other.mass);
+        otherNormal = (otherNormal * (other.mass - this.mass) + (2 * this.mass * thisNormal)) / (this.mass + other.mass);
 
-        v1n = Vector2.mult( uNormal, v1n);
-        v1t = Vector2.mult(uTangent, v1t);
-        this.velocity = Vector2.add(v1n,v1t);
+        //Step 4: TODO
+        thisNormal = Vector2.mult( normal, thisNormal);
+        thisTangent = Vector2.mult(tangent, thisTangent);
+        this.velocity = Vector2.add(thisNormal, thisTangent);
 
-        v2n = Vector2.mult(uNormal, v2n);
-        v2t = Vector2.mult(uTangent, v2t);
-        other.velocity = Vector2.add(v2n, v2t);
+        otherNormal = Vector2.mult(normal, otherNormal);
+        otherTangent = Vector2.mult(tangent, otherTangent);
+        other.velocity = Vector2.add(otherNormal, otherTangent);
     }
 }
 
